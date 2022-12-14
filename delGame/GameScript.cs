@@ -40,17 +40,6 @@ namespace delGame
                 {0, 2, 0, 0, 0, 1, 0, 1},
                 {2, 0, 2, 0, 0, 0, 1, 0}
             };
-            /*MapCords = new byte[8, 8]//поле для игры
-            {
-                {0, 0, 0, 0, 0, 0, 0, 0},
-                {0, 0, 4, 0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0},
-                {0, 0, 0, 3, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0, 0, 0, 0}
-            };*/
             SelectedWhite = new Vector2i(-1, -1);
 
             ListsUpdate();
@@ -209,11 +198,8 @@ namespace delGame
             int i = 0;
             MapCordstmp = (byte[,])MapCords.Clone();
             Priora = new Dictionary<int, List<Vector2i>>();
-
-            var startTimer = DateTime.Now;
+            
             Filtr(blacks, i, MapCordstmp, new List<Vector2i>());//Рекурсия расчёта наиболее выгодных ходов
-            Console.WriteLine(DateTime.Now - startTimer);
-
 
             switch (Agres)//Сложность
             {
@@ -532,7 +518,6 @@ namespace delGame
         #region ListUpdate
         void ListsUpdate()
         {
-            var StartTimer = DateTime.Now;
             blacks.Clear();
             white.Clear();
             for (int x = 0; x < 8; x++)//Проверяет по X
@@ -540,9 +525,6 @@ namespace delGame
                 XCheck(x);
                 Thread.Sleep(20);
             }
-#if DEBUG
-            Console.WriteLine(DateTime.Now - StartTimer + "\nblacks.Count = {0}\nwhite.Count = {1}", blacks.Count, white.Count);
-#endif
         }
         void XCheck(int x)
         {
