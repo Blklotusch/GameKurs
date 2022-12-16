@@ -1,4 +1,4 @@
-﻿using SFML.Graphics;
+using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 using System;
@@ -24,22 +24,12 @@ namespace delGame
         List<Vector2i> KingWhite = new List<Vector2i>();
         List<Vector2i> KingBlacks = new List<Vector2i>();
 
-        public GameScript(RenderWindow window)
+        public GameScript(RenderWindow window, byte[,] _LoadMap)
         {
+            MapCords = _LoadMap;//загрузка карты
             window.MouseButtonPressed += Control;
             window.MouseWheelScrolled += Scroll;
 
-            MapCords = new byte[8, 8]//поле для игры
-            {
-                {0, 2, 0, 0, 0, 1, 0, 1},
-                {2, 0, 2, 0, 0, 0, 1, 0},
-                {0, 2, 0, 0, 0, 1, 0, 1},
-                {2, 0, 2, 0, 0, 0, 1, 0},
-                {0, 2, 0, 0, 0, 1, 0, 1},
-                {2, 0, 2, 0, 0, 0, 1, 0},
-                {0, 2, 0, 0, 0, 1, 0, 1},
-                {2, 0, 2, 0, 0, 0, 1, 0}
-            };
             SelectedWhite = new Vector2i(-1, -1);
 
             ListsUpdate();
@@ -52,7 +42,6 @@ namespace delGame
             NowIsPlayer = true;
             if (!File.Exists("Log.txt"))
                 File.WriteAllText("Log.txt", null);
-            Log.Clear();
             StartLog = 1;
             Load = false;
         }//Иницилизация
@@ -72,7 +61,7 @@ namespace delGame
         static Vector2f AnimPos = new Vector2f(-75, -75);
         static byte TypeAnim = 1;
         static int StartLog = 1;
-        public static async void Draw(RenderWindow window)//реализация отрисовки игры
+        public static void Draw(RenderWindow window)//реализация отрисовки игры
         {
             window.Draw(MapSprite);
 
@@ -158,7 +147,7 @@ namespace delGame
         #region Логика игры
         public static int Agres = 0;//Уровень агресии
         static Random rnd = new Random();
-        static List<string> Log = new List<string>();
+        public static List<string> Log = new List<string>();
         public void Update(RenderWindow window)//часть кода определяющая логику игры
         {
             if (IsAnimated)
@@ -169,7 +158,11 @@ namespace delGame
                 StopThread = true;
                 IsEnd = true;
                 File.AppendAllText("Log.txt", (white.Count < blacks.Count ? "Победил игрок!" : "Победил компьютер!") + "\nВремя игры: " + (DateTime.Now - StartTimer).ToString() + "\n\n\n");
+                Log.Clear();
+                window.MouseButtonPressed -= Control;//убираем контроль с карты если игра закончена
+                window.MouseWheelScrolled -= Scroll;
                 while (!Keyboard.IsKeyPressed(Keyboard.Key.Enter)){}
+                File.Delete("Save");
                 IsEnd = false;
                 Run = false;
                 return;
@@ -178,7 +171,7 @@ namespace delGame
             if (NowIsPlayer)
                 return; 
 
-            ListsUpdate();//Апдейт списков шашек которые могут ходить
+            ListsUpdate();//Обновление списков шашек которые могут ходить
 
             if (blacks.Any(CanEat))//Если шашка может есть
             {
@@ -198,7 +191,7 @@ namespace delGame
             int i = 0;
             MapCordstmp = (byte[,])MapCords.Clone();
             Priora = new Dictionary<int, List<Vector2i>>();
-            
+
             Filtr(blacks, i, MapCordstmp, new List<Vector2i>());//Рекурсия расчёта наиболее выгодных ходов
 
             switch (Agres)//Сложность
@@ -228,8 +221,6 @@ namespace delGame
         static Vector2i SelectedWhite = new Vector2i(-1, -1);//Шашка выбраная игроком
         void Control(object o, EventArgs e)//Управление игрока
         {
-            if (Game.Screen != 2)
-                return;
 
             if (!NowIsPlayer || IsAnimated || IsEnd)
                 return;
@@ -271,8 +262,6 @@ namespace delGame
 
         void Scroll(object o, EventArgs e)//Скролинг логов
         {
-            if (Game.Screen != 2 )
-                return;
 
             int Delta = -(int)((MouseWheelScrollEventArgs)e).Delta;
 
@@ -322,13 +311,17 @@ namespace delGame
         {
             i++;
             if (i > Max)
+            {
+                if (!Priora.ContainsKey(i + 2))
+                    Priora.Add(i + 2, new List<Vector2i>(Steps));//Если не может ходить понижаем приоритет
                 return;
+            }
             foreach (var black in blacks)//Берём одну из чёрных
             {
                 Steps.Add(black);
                 if (i == 1)//Сохраняем тип
                     Type = MapCords[black.X, black.Y];
-                else//эмулируем шаг
+                else//моделируем шаг
                 {   
                     if (blacks.IndexOf(black) != 0)
                         Map[blacks[blacks.IndexOf(black) - 1].X, blacks[blacks.IndexOf(black) - 1].Y] = 0;
@@ -422,7 +415,7 @@ namespace delGame
                             if (MapCords[position.X + x, position.Y + y] == 0)
                                 MabyStep.Add(position + new Vector2i(x, y));
                         }
-                        catch { Console.WriteLine("Координата вне границ"); }
+                        catch { }
                     }
                     continue;
                 }
@@ -432,7 +425,7 @@ namespace delGame
                     if (MapCords[position.X + x, position.Y + ( Type == 2 ? 1 : -1)] == 0)
                         MabyStep.Add(position + new Vector2i(x, Type == 2 ? 1 : -1));
                 }
-                catch { Console.WriteLine("Координата вне границ"); }
+                catch { }
             }
 
             if (MabyStep.Count != 0)
@@ -518,12 +511,12 @@ namespace delGame
         #region ListUpdate
         void ListsUpdate()
         {
+            var StartTimer = DateTime.Now;
             blacks.Clear();
             white.Clear();
             for (int x = 0; x < 8; x++)//Проверяет по X
             {
                 XCheck(x);
-                Thread.Sleep(20);
             }
         }
         void XCheck(int x)
@@ -560,7 +553,7 @@ namespace delGame
             Anim2.Start();
         }
         Dictionary<int, char> Alph = new Dictionary<int, char>() { {0, 'A'}, {1, 'B'}, { 2, 'C' }, { 3, 'D' }, { 4, 'E' }, { 5, 'F' }, { 6, 'G' }, { 7, 'H' } };
-        void MoveOrEatAnim(Vector2i Start, Vector2i End, Vector2f Delta, byte Type)
+        async void MoveOrEatAnim(Vector2i Start, Vector2i End, Vector2f Delta, byte Type)
         {
             Log.Add(Alph[Start.X].ToString() + (8 - Start.Y ).ToString() + ":" + Alph[End.X].ToString() + (8 - End.Y).ToString());//Запись в логи
             File.AppendAllText("Log.txt", Alph[Start.X] + (9 - Start.Y + 1) + ":" + Alph[End.X] + (9 - End.Y + 1) + "\n");//Запись в файл
@@ -600,6 +593,9 @@ namespace delGame
             else
                 MapCords[End.X, End.Y] = Type;
 
+            if (Type % 2 == 0)
+                await Task.Run(() => Save(MapCords));//запуск асинхронного метода для записи игры 
+
             (Type % 2 == 0 ? blacks : white).Add(End);
             if (Type - 2 > 0) 
                 (Type % 2 == 0 ? KingBlacks : KingWhite).Add(End);
@@ -616,6 +612,24 @@ namespace delGame
         }
         #endregion
 
+        static async void Save(byte[,] Map)//асинхронный метод сохранения карты и логов на случай преждевременного закрытия
+        {
+            await File.WriteAllTextAsync("Save", null);
+            for (var x = 0; x < 8; x++)
+            {
+                for (var y = 0; y < 8; y++)
+                {
+                    await File.AppendAllTextAsync("Save", Map[x, y].ToString() + (y == 7 ? "" : ","));
+                }
+                await File.AppendAllTextAsync("Save", x == 7 ? "\n" + Agres + "\n" : "\n");
+            }
+            foreach (var l in Log)
+            {
+                await File.AppendAllTextAsync("Save", l + (Log.IndexOf(l) == Log.Count - 1 ? "" : "\n"));
+            }
+            Console.WriteLine("Файл сохранён");
+        }
         #endregion
     }
 }
+
