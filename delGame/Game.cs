@@ -1,4 +1,4 @@
-﻿using SFML.Graphics;
+using SFML.Graphics;
 using SFML.Window;
 using System;
 using System.Threading;
@@ -8,6 +8,7 @@ namespace delGame
     class Game
     {
         public static RenderWindow window;
+        public static byte[,] MapForLoad = new byte[8, 8];
 
         public static byte Screen = 0;
         static bool IsRun = true;
@@ -34,7 +35,6 @@ namespace delGame
                     case 0:
                         var _MenuScript = new MenuScript(window);
                         while (_MenuScript.Run) { }
-                        Screen = 1;
                         break;
                     case 1:
                         var _LevelScript = new LevelsScript(window);
@@ -43,7 +43,7 @@ namespace delGame
                         break;
                     case 2:
                         GameScript.Load = true;
-                        var _GameScript = new GameScript(window);
+                        var _GameScript = new GameScript(window, MapForLoad);
                         while (_GameScript.Run)
                         {
                             _GameScript.Update(window);
