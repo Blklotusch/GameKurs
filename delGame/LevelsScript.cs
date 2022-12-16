@@ -1,4 +1,4 @@
-﻿using SFML.Graphics;
+using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
 using System;
@@ -23,8 +23,8 @@ namespace delGame
         {
             MainText.Color = Color.Black;
 
-            MainText.DisplayedString = "Невозможно"; 
-            MainText.Position = Rect.Position + new Vector2f(35, 13);
+            MainText.DisplayedString = "Сложно"; 
+            MainText.Position = Rect.Position + new Vector2f(80, 13);
             MainText.CharacterSize = 40;
             window.Draw(Rect);
             window.Draw(MainText);
@@ -55,19 +55,28 @@ namespace delGame
 
         void Control(object o, EventArgs e)
         {
-            if (Game.Screen != 1)
-                return;
-
             var MouseArgs = (MouseButtonEventArgs)e;
             if (MouseArgs.Button != Mouse.Button.Left)
                 return;
 
             for (int i = 0; i < rectangles.Length; i++)
             {
-                if (rectangles[i].GetGlobalBounds().Contains(MouseArgs.X, MouseArgs.Y))
+                if (rectangles[i].GetGlobalBounds().Contains(MouseArgs.X, MouseArgs.Y))//если выбираешь новую игру загружается карта
                 {
                     GameScript.Agres = i;
+                    Game.MapForLoad = new byte[8, 8]
+                    {
+                        {0, 2, 0, 0, 0, 1, 0, 1},
+                        {2, 0, 2, 0, 0, 0, 1, 0},
+                        {0, 2, 0, 0, 0, 1, 0, 1},
+                        {2, 0, 2, 0, 0, 0, 1, 0},
+                        {0, 2, 0, 0, 0, 1, 0, 1},
+                        {2, 0, 2, 0, 0, 0, 1, 0},
+                        {0, 2, 0, 0, 0, 1, 0, 1},
+                        {2, 0, 2, 0, 0, 0, 1, 0}
+                    };
                     Run = false;
+                    ((RenderWindow)o).MouseButtonPressed -= Control;//удаляется контроль других экранов
                 }
             }
         }
